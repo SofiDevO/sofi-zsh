@@ -5,7 +5,26 @@ This script automates the installation and configuration of **Zsh**, **Oh My Zsh
 ---
 ## Prerequisites
 Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have **root** or **sudo** privileges.
+> [!IMPORTANT]
+> Important: Install the MesloLGS NF Font
 
+To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
+
+1. Download the font:
+   - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
+
+2. Install the font:
+   - Open the downloaded `.ttf` file and click the **Install** button.
+
+3. Set the font in your terminal:
+   - For **GNOME Terminal** (default terminal in Ubuntu):
+     1. Open the terminal preferences.
+     2. Go to the **Text** or **Appearance** section.
+     3. Select **MesloLGS NF** as the font.
+
+   - For **other terminals**, refer to their respective documentation on setting custom fonts.
+
+---
 ## Installation
 
 ###  Execute the script directly:
@@ -26,49 +45,10 @@ Once the script finishes, restart your terminal or run zsh to switch to Zsh as y
 
 ---
 
-> [!IMPORTANT]
-> Important: Install the MesloLGS NF Font
-
-To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
 
 
-
-## What does this script do?
-
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
-
-```
-1. Download the font:
-   - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
-
-2. Install the font:
-   - Open the downloaded `.ttf` file and click the **Install** button.
-
-3. Set the font in your terminal:
-   - For **GNOME Terminal** (default terminal in Ubuntu):
-     1. Open the terminal preferences.
-     2. Go to the **Text** or **Appearance** section.
-     3. Select **MesloLGS NF** as the font.
-
-   - For **other terminals**, refer to their respective documentation on setting custom fonts.
-
----
-## 2. Install Plugins and Configure .zshrc
-Once Zsh is set up as your shell, run the following command to install the necessary plugins and configure your .zshrc file:
-How to Run This Script
-Download the script: Download the script without using sudo bash. If you're using curl, you can download it with:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh -o sofi-zsh-config.sh
-Execute the script: Run the script as a regular user:
-```
-```bash
-bash sofi-zsh-config.sh
-```
-Using sudo when necessary: The script will prompt for sudo access when it needs to perform tasks that require root privileges (such as installing packages or changing the default shell).
-
+##  Install Plugins and Configure .zshrc
+Once Zsh is set up as your shell, it will install the necessary plugins and configure your .zshrc file:
 ## What does this script do?
 
 - Installs **Oh My Zsh**.
@@ -80,10 +60,6 @@ Using sudo when necessary: The script will prompt for sudo access when it needs 
   - `zsh-autocomplete`
 - Configure your .zshrc file with the recommended settings.
 - If you already have a .zshrc file, a backup will be created before it is overwritten with the new configuration.
-
-What to do next?
-Once the second script finishes running, restart your terminal or run zsh to see the changes. You can adjust the theme and plugin settings by editing the .zshrc file in your home directory (~/.zshrc).
-
 
 
 ---
@@ -101,7 +77,7 @@ If you found this project useful and would like to support my work, consider don
   </a>
 </p>
 
-Your support helps me create more open-source tools like this one! Thank you! 🙌
+Your support helps me create more open-source tools like this one! Thank you! 💜🦝🤙🏻
 
 ---
 
