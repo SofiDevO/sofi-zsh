@@ -10,10 +10,6 @@ Before running the scripts, make sure you're using a **Debian-based** distributi
 
 ###  Execute the script directly:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
-
-```
 
 
 Run the following command to execute the script directly without cloning the repository:
@@ -41,6 +37,11 @@ To display icons correctly in the **Powerlevel10k** theme, you must install the 
 
 ## What does this script do?
 
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
+
+```
 1. Download the font:
    - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
 
