@@ -17,12 +17,20 @@ if [[ "$EUID" -ne 0 ]]; then
     exit 1
 fi
 
+# Determine the user's home directory
+USER_HOME=$(eval echo ~$SUDO_USER)
+
+# Check if we successfully retrieved the user's home directory
+if [ -z "$USER_HOME" ]; then
+    error "Unable to determine the user's home directory. Make sure the script is being run with sudo."
+fi
+
 echo -e "${GREEN}[INFO] 🦝 Installing Oh My Zsh...${NC}"
 export RUNZSH=no
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Failed to install Oh My Zsh."
 
 echo -e "${GREEN}[INFO] 🦝 Installing Zsh plugins...${NC}"
-ZSH_CUSTOM="${HOME}/.oh-my-zsh/custom"
+ZSH_CUSTOM="${USER_HOME}/.oh-my-zsh/custom"
 git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" || error "Failed to clone zsh-autosuggestions."
 git clone https://github.com/zsh-users/zsh-syntax-highlighting "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" || error "Failed to clone zsh-syntax-highlighting."
 git clone https://github.com/zdharma-continuum/fast-syntax-highlighting "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" || error "Failed to clone fast-syntax-highlighting."
@@ -33,7 +41,7 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/
 
 echo -e "${GREEN}[INFO] 🦝 Configuring .zshrc...${NC}"
 
-ZSHRC="${HOME}/.zshrc"
+ZSHRC="${USER_HOME}/.zshrc"
 
 # Always backup the existing .zshrc before overwriting
 cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to create a backup of .zshrc."
