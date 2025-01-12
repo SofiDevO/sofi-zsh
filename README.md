@@ -10,18 +10,12 @@ Before running the scripts, make sure you're using a **Debian-based** distributi
 
 ###  Execute the script directly:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
-
-```
-
-
-Run the following command to execute the script directly without cloning the repository:
+Run the following command to execute the script directly without cloning
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh -o sofi-zsh-config.sh
-bash sofi-zsh-config.sh
+
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh -o sofi-zsh.sh
+bash sofi-zsh.sh
 
 ```
 ## This command will:
