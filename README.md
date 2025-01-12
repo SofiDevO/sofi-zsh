@@ -28,7 +28,8 @@ If you prefer to clone the repository and execute the script manually, follow th
 
 ---
 
-## Important: Install the MesloLGS NF Font
+> [!IMPORTANT]
+> Important: Install the MesloLGS NF Font
 
 To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
 
