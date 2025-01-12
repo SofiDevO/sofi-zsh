@@ -10,7 +10,7 @@ This script automates the installation and configuration of **Zsh**, **Oh My Zsh
 Run the following command to execute the script directly without cloning the repository:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh)
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh
 ```
 
 ### Option 2: Clone the repository and run the script
