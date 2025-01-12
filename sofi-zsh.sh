@@ -22,7 +22,7 @@ sudo apt update || error "Failed to update the package list."
 sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
 
 echo -e "${GREEN}[INFO]🦝 Changing default shell to Zsh...${NC}"
-chsh -s "$(which zsh)" "$USER" || error "Failed to change the default shell."
+chsh -s  $(which zsh) "$USER" || error "Failed to change the default shell."
 
 echo -e "${GREEN}[INFO] 🦝Installing Oh My Zsh...${NC}"
 export RUNZSH=no
@@ -38,6 +38,16 @@ git clone https://github.com/marlonrichert/zsh-autocomplete "${ZSH_CUSTOM}/plugi
 echo -e "${GREEN}[INFO] 🦝Installing Powerlevel10k theme...${NC}"
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" || error "Failed to clone Powerlevel10k."
 
+echo -e "${GREEN}[INFO] 🦝Checking if .zshrc exists...${NC}"
+ZSHRC="${HOME}/.zshrc"
+if [ ! -f "$ZSHRC" ]; then
+    echo -e "${GREEN}[INFO] 🦝Creating .zshrc...${NC}"
+    touch "$ZSHRC" || error "Failed to create .zshrc."
+else
+    echo -e "${GREEN}[INFO] 🦝.zshrc already exists. Backing up...${NC}"
+    cp "$ZSHRC" "$ZSHRC.backup" || error "Failed to create backup of .zshrc."
+fi
+
 echo -e "${GREEN}[INFO]🦝 Configuring .zshrc...${NC}"
 ZSHRC="${HOME}/.zshrc"
 cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to create a backup of .zshrc."
@@ -49,4 +59,4 @@ source \$ZSH/oh-my-zsh.sh
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 EOF
 
-echo -e "${GREEN}[INFO] 🦝Installation complete. Restart your terminal or run 'zsh' to start.${NC}"
+echo -e "${GREEN}[INFO] 🦝Installation complete. run 'zsh' to start. Select option (q) ${NC}"
