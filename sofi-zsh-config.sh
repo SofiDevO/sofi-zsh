@@ -32,8 +32,13 @@ echo -e "${GREEN}[INFO] 🦝 Installing Powerlevel10k theme...${NC}"
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" || error "Failed to clone Powerlevel10k."
 
 echo -e "${GREEN}[INFO] 🦝 Configuring .zshrc...${NC}"
+
 ZSHRC="${HOME}/.zshrc"
+
+# Always backup the existing .zshrc before overwriting
 cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to create a backup of .zshrc."
+
+# Overwrite .zshrc with default configuration
 cat > "${ZSHRC}" <<EOF
 export ZSH="\$HOME/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
