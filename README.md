@@ -3,21 +3,37 @@
 This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems.
 
 ---
+
 ## Prerequisites
+
 Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have **root** or **sudo** privileges.
+
+> [!WARNING]
+> You need curl to run this script
+
+Intall curl by running:
+
+```bash
+  sudo apt  install curl
+```
+
 > [!IMPORTANT]
 > Important: Install the MesloLGS NF Font
 
 To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
 
 1. Download the font:
+
    - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
 
 2. Install the font:
+
    - Open the downloaded `.ttf` file and click the **Install** button.
 
 3. Set the font in your terminal:
+
    - For **GNOME Terminal** (default terminal in Ubuntu):
+
      1. Open the terminal preferences.
      2. Go to the **Text** or **Appearance** section.
      3. Select **MesloLGS NF** as the font.
@@ -25,9 +41,10 @@ To display icons correctly in the **Powerlevel10k** theme, you must install the 
    - For **other terminals**, refer to their respective documentation on setting custom fonts.
 
 ---
+
 ## Installation
 
-###  Execute the script directly:
+### Execute the script directly:
 
 Run the following command to execute the script directly without cloning
 
@@ -38,7 +55,9 @@ bash sofi-zsh.sh
 rm -f sofi-zsh.sh
 zsh
 ```
+
 ## This command will:
+
 Install Zsh, Git, and Curl.
 Change the default shell to Zsh.
 Print instructions for running the next script to configure your Zsh environment.
@@ -46,10 +65,10 @@ Once the script finishes, restart your terminal or run zsh to switch to Zsh as y
 
 ---
 
+## Install Plugins and Configure .zshrc
 
-
-##  Install Plugins and Configure .zshrc
 Once Zsh is set up as your shell, it will install the necessary plugins and configure your .zshrc file:
+
 ## What does this script do?
 
 - Installs **Oh My Zsh**.
@@ -61,7 +80,6 @@ Once Zsh is set up as your shell, it will install the necessary plugins and conf
   - `zsh-autocomplete`
 - Configure your .zshrc file with the recommended settings.
 - If you already have a .zshrc file, a backup will be created before it is overwritten with the new configuration.
-
 
 ---
 
@@ -83,16 +101,19 @@ Your support helps me create more open-source tools like this one! Thank you! ü
 ---
 
 ## Contribution
+
 Feel free to contribute to this project! Fork the repository, make your changes, and submit a pull request.
 
 ---
 
 ## Credits
+
 This script is inspired by the Zsh community and its amazing contributors. Special thanks to the developers of **Oh My Zsh**, the plugins used in this script, and the **Powerlevel10k** theme.
 
 ---
 
 ### Notes
+
 The buttons use `shields.io` to generate the visuals. They link directly to **GitHub Sponsors** and **Ko-fi**.
 
 Let me know if you need further refinements! ü¶ù
