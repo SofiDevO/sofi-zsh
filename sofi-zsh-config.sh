@@ -11,20 +11,23 @@ error() {
     exit 1
 }
 
-# Check if the script is being run as root
-if [[ "$EUID" -ne 0 ]]; then
-    echo -e "${RED}[ERROR]🦝 You must run this script as root or with sudo.${NC}"
-    exit 1
-fi
+echo -e "${GREEN}[INFO] 🦝 Installing dependencies...${NC}"
+# Instalar dependencias utilizando sudo donde sea necesario
+sudo apt update || error "Failed to update the package list."
+sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
 
-# Get the current user's home directory
-USER_HOME=$(eval echo ~$SUDO_USER)
+echo -e "${GREEN}[INFO] 🦝 Changing default shell to Zsh...${NC}"
+# Cambiar la shell por defecto solo con sudo
+sudo chsh -s $(which zsh) "$USER" || error "Failed to change the default shell."
 
 echo -e "${GREEN}[INFO] 🦝 Installing Oh My Zsh...${NC}"
+# Evitamos la ejecución como root aquí y lo dejamos al usuario
 export RUNZSH=no
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Failed to install Oh My Zsh."
 
 echo -e "${GREEN}[INFO] 🦝 Installing Zsh plugins...${NC}"
+# Aquí instalamos los plugins de Zsh en el directorio del usuario
+USER_HOME=$(eval echo ~$SUDO_USER)
 ZSH_CUSTOM="${USER_HOME}/.oh-my-zsh/custom"
 git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" || error "Failed to clone zsh-autosuggestions."
 git clone https://github.com/zsh-users/zsh-syntax-highlighting "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" || error "Failed to clone zsh-syntax-highlighting."
