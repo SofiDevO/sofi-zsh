@@ -17,13 +17,8 @@ if [[ "$EUID" -ne 0 ]]; then
     exit 1
 fi
 
-# Determine the user's home directory
+# Get the current user's home directory
 USER_HOME=$(eval echo ~$SUDO_USER)
-
-# Check if we successfully retrieved the user's home directory
-if [ -z "$USER_HOME" ]; then
-    error "Unable to determine the user's home directory. Make sure the script is being run with sudo."
-fi
 
 echo -e "${GREEN}[INFO] 🦝 Installing Oh My Zsh...${NC}"
 export RUNZSH=no
