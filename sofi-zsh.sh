@@ -22,7 +22,7 @@ sudo apt update || error "Failed to update the package list."
 sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
 
 echo -e "${GREEN}[INFO] 🦝 Changing default shell to Zsh...${NC}"
-chsh -s $(which zsh) "$USER" || error "Failed to change the default shell."
+chsh -s $(which zsh) || error "Failed to change the default shell."
 
 # Instructions after installation
 echo -e "${GREEN}[INFO] 🦝 Installation complete. Please restart your terminal or run 'zsh' to start.${NC}"
@@ -32,5 +32,4 @@ echo -e "${GREEN}[INFO] 🦝 Select option (0) when prompted to create the .zshr
 echo ""
 echo "You can:"
 echo "(0) Exit, creating the file ~/.zshrc containing just a comment."
-echo "(1) Continue to the main menu."
-echo "(2) Populate your ~/.zshrc with the configuration recommended by the system administrator."
+
