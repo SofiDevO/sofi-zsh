@@ -35,7 +35,8 @@ Run the following command to execute the script directly without cloning
 
 curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh -o sofi-zsh.sh
 bash sofi-zsh.sh
-
+rm -f sofi-zsh.sh
+zsh
 ```
 ## This command will:
 Install Zsh, Git, and Curl.

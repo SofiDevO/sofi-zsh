@@ -72,5 +72,5 @@ EOF
 
 echo -e "${GREEN}[INFO] 🦝 Installation complete. Restart your terminal or run 'zsh' to start.${NC}"
 
-rm -f sofi-zsh.sh
+
 echo -e "${GREEN}[INFO] 🦝Enjoy! 💜 .${NC}"
