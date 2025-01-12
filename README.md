@@ -8,11 +8,20 @@ Before running the scripts, make sure you're using a **Debian-based** distributi
 
 ## Installation
 
-###  Execute the script directly from GitHub
+###  Execute the script directly:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
+
+```
+
+
 Run the following command to execute the script directly without cloning the repository:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh -o sofi-zsh-config.sh
+bash sofi-zsh-config.sh
 
 ```
 ## This command will:
@@ -49,12 +58,17 @@ To display icons correctly in the **Powerlevel10k** theme, you must install the 
 ---
 ## 2. Install Plugins and Configure .zshrc
 Once Zsh is set up as your shell, run the following command to install the necessary plugins and configure your .zshrc file:
+How to Run This Script
+Download the script: Download the script without using sudo bash. If you're using curl, you can download it with:
 
 ```bash
-
 curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh -o sofi-zsh-config.sh
-
+Execute the script: Run the script as a regular user:
 ```
+```bash
+bash sofi-zsh-config.sh
+```
+Using sudo when necessary: The script will prompt for sudo access when it needs to perform tasks that require root privileges (such as installing packages or changing the default shell).
 
 ## What does this script do?
 
