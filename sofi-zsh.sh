@@ -6,7 +6,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No color
 
 # Function to display errors
-error() {
+lerror() {
     echo -e "${RED}[ERROR]${NC} $1"
     exit 1
 }
