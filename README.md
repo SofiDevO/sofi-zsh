@@ -52,7 +52,8 @@ Once Zsh is set up as your shell, run the following command to install the neces
 
 ```bash
 
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh -o sofi-zsh-config.sh
+
 ```
 
 ## What does this script do?

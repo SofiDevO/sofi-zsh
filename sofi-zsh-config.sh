@@ -12,7 +12,7 @@ error() {
 }
 
 echo -e "${GREEN}[INFO] 🦝 Installing dependencies...${NC}"
-# Instalar dependencias utilizando sudo donde sea necesario
+# Instalamos dependencias utilizando sudo solo cuando sea necesario
 sudo apt update || error "Failed to update the package list."
 sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
 
@@ -21,12 +21,12 @@ echo -e "${GREEN}[INFO] 🦝 Changing default shell to Zsh...${NC}"
 sudo chsh -s $(which zsh) "$USER" || error "Failed to change the default shell."
 
 echo -e "${GREEN}[INFO] 🦝 Installing Oh My Zsh...${NC}"
-# Evitamos la ejecución como root aquí y lo dejamos al usuario
+# Evitamos ejecutar el script de instalación como root, se ejecuta como usuario normal
 export RUNZSH=no
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Failed to install Oh My Zsh."
 
 echo -e "${GREEN}[INFO] 🦝 Installing Zsh plugins...${NC}"
-# Aquí instalamos los plugins de Zsh en el directorio del usuario
+# Instalar los plugins en el directorio de usuario
 USER_HOME=$(eval echo ~$SUDO_USER)
 ZSH_CUSTOM="${USER_HOME}/.oh-my-zsh/custom"
 git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" || error "Failed to clone zsh-autosuggestions."
