@@ -11,12 +11,6 @@ error() {
     exit 1
 }
 
-# Check if the script is being run as root
-if [[ "$EUID" -ne 0 ]]; then
-    echo -e "${RED}[ERROR]🦝  You must run this script as root or with sudo.${NC}"
-    exit 1
-fi
-
 echo -e "${GREEN}[INFO] 🦝 Installing dependencies...${NC}"
 sudo apt update || error "Failed to update the package list."
 sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
