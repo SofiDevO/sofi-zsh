@@ -3,30 +3,23 @@
 This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems.
 
 ---
+## Prerequisites
+Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have **root** or **sudo** privileges.
 
 ## Installation
 
-### Option 1: Execute the script directly from GitHub
+###  Execute the script directly from GitHub
 Run the following command to execute the script directly without cloning the repository:
 
 ```bash
-
 curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh | sudo bash
 
 ```
-
-### Option 2: Clone the repository and run the script
-If you prefer to clone the repository and execute the script manually, follow these steps:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/SofiDevO/sofi-zsh.git ~/sofi-zsh
-   ```
-
-2. Run the script:
-   ```bash
-   sudo bash ~/sofi-zsh/sofi-zsh.sh
-   ```
+## This command will:
+Install Zsh, Git, and Curl.
+Change the default shell to Zsh.
+Print instructions for running the next script to configure your Zsh environment.
+Once the script finishes, restart your terminal or run zsh to switch to Zsh as your default shell. Then, follow the instructions provided to run the next script.
 
 ---
 
@@ -35,7 +28,9 @@ If you prefer to clone the repository and execute the script manually, follow th
 
 To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
 
-### Steps to Install:
+
+
+## What does this script do?
 
 1. Download the font:
    - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
@@ -52,10 +47,16 @@ To display icons correctly in the **Powerlevel10k** theme, you must install the 
    - For **other terminals**, refer to their respective documentation on setting custom fonts.
 
 ---
+## 2. Install Plugins and Configure .zshrc
+Once Zsh is set up as your shell, run the following command to install the necessary plugins and configure your .zshrc file:
+
+```bash
+
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh-config.sh | sudo bash
+```
 
 ## What does this script do?
-- Installs **Zsh**, **Git**, and **Curl**.
-- Sets **Zsh** as the default shell.
+
 - Installs **Oh My Zsh**.
 - Configures the **Powerlevel10k** theme.
 - Installs popular plugins:
@@ -63,6 +64,13 @@ To display icons correctly in the **Powerlevel10k** theme, you must install the 
   - `zsh-syntax-highlighting`
   - `fast-syntax-highlighting`
   - `zsh-autocomplete`
+- Configure your .zshrc file with the recommended settings.
+- If you already have a .zshrc file, a backup will be created before it is overwritten with the new configuration.
+
+What to do next?
+Once the second script finishes running, restart your terminal or run zsh to see the changes. You can adjust the theme and plugin settings by editing the .zshrc file in your home directory (~/.zshrc).
+
+
 
 ---
 
