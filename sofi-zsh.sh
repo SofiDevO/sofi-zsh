@@ -50,21 +50,12 @@ rm -f "$BAT_RELEASE"
 
 echo -e "${GREEN}[INFO] 🦝 Configuring BAT...${NC}"
 cat > "${USER_HOME}/.bat.conf" <<EOF
-# Set the theme to "TwoDark"
-#--theme="Dracula"
-
-# Show line numbers, Git modifications and file header
+# Configuración de BAT
 --style="full"
-
-# Use italic text on the terminal
-#--italic-text=always
-
-# Use C++ syntax for Arduino .ino files
-#--map-syntax "*.ino:C++"
 EOF
 
 echo -e "${GREEN}[INFO] 🦝 Building BAT cache...${NC}"
-sudo -u $SUDO_USER bat cache --build || error "Failed to build BAT cache"
+sudo -u $(logname) bat cache --build || error "Failed to build BAT cache"
 
 # Instalación de LSD
 echo -e "\n${GREEN}[INFO] 🦝 Installing LSD...${NC}"
