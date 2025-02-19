@@ -1,91 +1,93 @@
 # Sofi Zsh Installer Script 🦝
 
-This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems.
+This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems, plus modern CLI tools and aliases.
 
 ---
 
 ## Prerequisites
 
-Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have **root** or **sudo** privileges.
+Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have:
 
-> [!WARNING]
-> You need curl to run this script
-
-Intall curl by running:
-
-```bash
-  sudo apt  install curl
-```
+- **Root/sudo privileges**
+- **Node.js and npm** (for gitmoji installation)
+- **MesloLGS NF Font** (for proper icon display)
 
 > [!IMPORTANT]
-> Important: Install the MesloLGS NF Font
-
-To display icons correctly in the **Powerlevel10k** theme, you must install the **MesloLGS NF** font.
+> **Font Installation Guide**
 
 1. Download the font:
-
    - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
 
 2. Install the font:
-
-   - Open the downloaded `.ttf` file and click the **Install** button.
-
-3. Set the font in your terminal:
-
-   - For **GNOME Terminal** (default terminal in Ubuntu):
-
-     1. Open the terminal preferences.
-     2. Go to the **Text** or **Appearance** section.
-     3. Select **MesloLGS NF** as the font.
-
-   - For **other terminals**, refer to their respective documentation on setting custom fonts.
+   - Open the `.ttf` file and click **Install**
+   - Set as terminal font in preferences
 
 ---
 
 ## Installation
 
-### Execute the script directly:
-
-Run the following command to execute the script directly without cloning
+### One-line Installation:
 
 ```bash
-
-curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh -o sofi-zsh.sh
-bash sofi-zsh.sh
-rm -f sofi-zsh.sh
-zsh
+curl -fsSL https://raw.githubusercontent.com/SofiDevO/sofi-zsh/main/sofi-zsh.sh -o sofi-zsh.sh && bash sofi-zsh.sh && rm -f sofi-zsh.sh
 ```
 
-## This command will:
+## Features Overview
 
-Install Zsh, Git, and Curl.
-Change the default shell to Zsh.
-Print instructions for running the next script to configure your Zsh environment.
-Once the script finishes, restart your terminal or run zsh to switch to Zsh as your default shell. Then, follow the instructions provided to run the next script.
-
----
-
-## Install Plugins and Configure .zshrc
-
-Once Zsh is set up as your shell, it will install the necessary plugins and configure your .zshrc file:
-
-## What does this script do?
-
-- Installs **Oh My Zsh**.
-- Configures the **Powerlevel10k** theme.
-- Installs popular plugins:
+### Core Components
+- **Zsh** with **Oh My Zsh** framework
+- **Powerlevel10k** theme with interactive configuration
+- Essential plugins:
   - `zsh-autosuggestions`
   - `zsh-syntax-highlighting`
   - `fast-syntax-highlighting`
   - `zsh-autocomplete`
-- Configure your .zshrc file with the recommended settings.
-- If you already have a .zshrc file, a backup will be created before it is overwritten with the new configuration.
+
+### Enhanced CLI Tools
+- **Bat** (cat clone with syntax highlighting)
+- **LSD** (modern ls replacement)
+- **Gitmoji** (emoji-based commit system)
+
+### Smart Aliases
+```bash
+alias cat="bat"
+alias ls="lsd --group-dirs=first"
+alias l="ls -l --group-dirs=first"
+alias la="ls -a --group-dirs=first"
+alias lla="ls -la --group-dirs=first"
+alias lt="ls --tree --group-dirs=first"
+alias commit="gitmoji -i && git add . && git commit"
+```
+
+---
+
+## Custom Installation Options
+
+### Version Selection
+During installation, you can specify versions for:
+- **Bat**: [Releases](https://github.com/sharkdp/bat/releases)
+- **LSD**: [Releases](https://github.com/lsd-rs/lsd/releases)
+
+Example format: `bat_0.25.0_amd64.deb` or `lsd_1.1.5_amd64.deb`
+
+### Automatic Configuration
+- Bat themes and settings in `~/.bat.conf`
+- LSD directory sorting preferences
+- Gitmoji interactive commit workflow
+
+---
+
+## Post-Installation
+After installation completes:
+1. Restart your terminal
+2. Run `zsh` to start configuration wizard
+3. Customize Powerlevel10k prompts interactively
 
 ---
 
 ## Support My Work 💜
 
-If you found this project useful and would like to support my work, consider donating or sponsoring me:
+If you enjoy using this toolkit, consider supporting its development:
 
 <p align="center">
   <a href="https://github.com/sponsors/SofiDevO" target="_blank">
@@ -96,24 +98,20 @@ If you found this project useful and would like to support my work, consider don
   </a>
 </p>
 
-Your support helps me create more open-source tools like this one! Thank you! 💜🦝🤙🏻
-
 ---
 
 ## Contribution
 
-Feel free to contribute to this project! Fork the repository, make your changes, and submit a pull request.
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Submit a PR with detailed description
 
 ---
 
 ## Credits
-
-This script is inspired by the Zsh community and its amazing contributors. Special thanks to the developers of **Oh My Zsh**, the plugins used in this script, and the **Powerlevel10k** theme.
-
----
-
-### Notes
-
-The buttons use `shields.io` to generate the visuals. They link directly to **GitHub Sponsors** and **Ko-fi**.
-
-Let me know if you need further refinements! 🦝
+Special thanks to:
+- Oh My Zsh & Powerlevel10k teams
+- Bat (sharkdp) & LSD (lsd-rs) developers
+- Gitmoji contributors
+- Zsh plugin maintainers
