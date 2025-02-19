@@ -55,7 +55,7 @@ cat > "${USER_HOME}/.bat.conf" <<EOF
 EOF
 
 echo -e "${GREEN}[INFO] 🦝 Building BAT cache...${NC}"
-sudo -u $(logname) bat cache --build || error "Failed to build BAT cache"
+
 
 # Instalación de LSD
 echo -e "\n${GREEN}[INFO] 🦝 Installing LSD...${NC}"
