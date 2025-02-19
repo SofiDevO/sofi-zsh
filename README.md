@@ -6,7 +6,19 @@ This script automates the installation and configuration of **Zsh**, **Oh My Zsh
 
 ## Prerequisites
 
+
+
 Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have:
+
+> [!WARNING]
+> You need curl to run this script
+
+Intall curl by running:
+
+```bash
+  sudo apt  install curl
+```
+
 
 - **Root/sudo privileges**
 - **Node.js and npm** (for gitmoji installation)
