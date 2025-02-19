@@ -86,7 +86,7 @@ if ! command -v npm &>/dev/null; then
 fi
 
 # Instalar gitmoji
-sudo npm install -g gitmoji-cli || error "Failed to install gitmoji"
+ npm install -g gitmoji-cli || error "Failed to install gitmoji"
 
 # Configuración de aliases en .zshrc
 echo -e "\n${GREEN}[INFO] 🦝 Configuring .zshrc...${NC}"
