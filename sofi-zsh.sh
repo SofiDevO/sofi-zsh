@@ -74,9 +74,18 @@ rm -f "$LSD_RELEASE"
 
 # Instalación de gitmoji
 echo -e "\n${GREEN}[INFO] 🦝 Installing gitmoji...${NC}"
+
+# Verificar e instalar Node.js y npm
 if ! command -v npm &>/dev/null; then
-    error "npm is required. Install Node.js first."
+    echo -e "${GREEN}[INFO] 🦝 Installing Node.js and npm...${NC}"
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt install -y nodejs || error "Failed to install Node.js"
+
+    # Actualizar npm
+    sudo npm install -g npm@latest || error "Failed to update npm"
 fi
+
+# Instalar gitmoji
 sudo npm install -g gitmoji-cli || error "Failed to install gitmoji"
 
 # Configuración de aliases en .zshrc
