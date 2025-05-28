@@ -6,7 +6,9 @@ This script automates the installation and configuration of **Zsh**, **Oh My Zsh
 
 ## Prerequisites
 
-
+```bash
+sudo apt-get update
+```
 
 Before running the scripts, make sure you're using a **Debian-based** distribution (such as Ubuntu) and have:
 
