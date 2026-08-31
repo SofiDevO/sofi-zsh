@@ -1,4 +1,4 @@
-# Sofi Zsh Installer Script 🦝
+# Sofi Zsh Installer Script
 
 This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems, plus modern CLI tools and aliases.
 
@@ -79,7 +79,6 @@ The installer performs a complete setup of a modern developer shell environment:
 - **zoxide**: smart directory navigation based on usage history
 - **lazygit**: terminal UI for Git workflows
 - **delta**: improved Git diff viewer
-- **thefuck**: auto-corrects mistyped shell commands
 
 ### Shell aliases and config
 The script appends a dedicated block at the end of `~/.zshrc` without overwriting the user’s existing configuration.
@@ -97,10 +96,6 @@ alias fd="fdfind"
 
 if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init zsh)"
-fi
-
-if command -v thefuck >/dev/null 2>&1; then
-  eval "$(thefuck --alias)"
 fi
 
 if command -v fzf >/dev/null 2>&1; then
@@ -157,8 +152,24 @@ The script configures the following automatically:
 - zoxide initialization for smarter directory navigation
 - fzf key bindings and completion for interactive shell workflows
 - delta as the default git pager and diff viewer
-- thefuck alias for command correction
 - lazygit installation for terminal-based Git UX
+
+---
+
+## Error handling and rollback
+
+The installer tracks every step with boolean state flags. If any step fails, the `error()` function:
+
+1. Prints the exact failure reason in red
+2. Calls `cleanup()` which undoes every completed step in reverse order:
+   - restores `.zshrc` from backup if it was modified
+   - removes installed binaries (`delta`, `lazygit`, `zoxide`)
+   - uninstalls apt packages (`fzf`, `ripgrep`, `fd-find`, `lsd`, `bat`)
+   - removes Oh My Zsh, plugins, and the Powerlevel10k theme
+   - reverts the default shell back to `/bin/bash`
+3. Exits with a non-zero code
+
+This guarantees a clean system state after any partial failure, so the installer can be run again from scratch without manual cleanup.
 
 ---
 
@@ -199,7 +210,7 @@ If BAT or LSD cannot be downloaded or installed, verify:
 - the package URL is valid for the selected release
 - the fallback default version still matches the upstream asset naming convention
 
-### zoxide or thefuck not available after install
+### zoxide not available after install
 Open a new terminal session or run:
 
 ```bash
@@ -218,13 +229,12 @@ This installer aims to produce a ready-to-use developer shell with the following
 - terminal aesthetics: Powerlevel10k
 - productivity: fzf + rg + fd + zoxide
 - git UX: lazygit + delta
-- command correction: thefuck
 
 This combination is a practical and modern terminal setup for software development, fast searching, Git management, and a cleaner daily workflow.
 
 ---
 
-## Support My Work 💜
+## Support My Work
 
 If you enjoy using this toolkit, consider supporting its development:
 

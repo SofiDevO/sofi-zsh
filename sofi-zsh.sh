@@ -3,7 +3,8 @@
 # Colors for messages
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # No color
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
 if [ "$EUID" -ne 0 ]; then
   echo "Please run this script with sudo:"
@@ -11,34 +12,109 @@ if [ "$EUID" -ne 0 ]; then
   exec sudo "$0" "$@"
 fi
 
-# Function to display errors
+USER_HOME=$(eval echo ~"$SUDO_USER")
+ZSH_CUSTOM="${USER_HOME}/.oh-my-zsh/custom"
+ZSHRC="${USER_HOME}/.zshrc"
+
+# ─── State flags (set to 1 as each step completes) ──────────────────────────
+INSTALLED_ZSH=0
+INSTALLED_OMZ=0
+INSTALLED_PLUGINS=0
+INSTALLED_P10K=0
+INSTALLED_BAT=0
+INSTALLED_BAT_CONF=0
+INSTALLED_LSD=0
+INSTALLED_PRODUCTIVITY=0
+INSTALLED_ZOXIDE=0
+INSTALLED_LAZYGIT=0
+INSTALLED_DELTA=0
+ZSHRC_BACKED_UP=0
+ZSHRC_MODIFIED=0
+
+# ─── Cleanup: undoes everything this script touched ─────────────────────────
+cleanup() {
+    echo -e "\n${YELLOW}[CLEANUP] Rolling back changes...${NC}"
+
+    if [ "$ZSHRC_MODIFIED" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Restoring original .zshrc...${NC}"
+        mv "${ZSHRC}.backup" "${ZSHRC}" 2>/dev/null
+    elif [ "$ZSHRC_BACKED_UP" -eq 1 ]; then
+        rm -f "${ZSHRC}.backup"
+    fi
+
+    if [ "$INSTALLED_DELTA" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing delta...${NC}"
+        rm -f /usr/local/bin/delta
+    fi
+
+    if [ "$INSTALLED_LAZYGIT" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing lazygit...${NC}"
+        rm -f /usr/local/bin/lazygit
+    fi
+
+    if [ "$INSTALLED_ZOXIDE" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing zoxide...${NC}"
+        rm -f "${USER_HOME}/.local/bin/zoxide"
+    fi
+
+    if [ "$INSTALLED_PRODUCTIVITY" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing fzf, ripgrep, fd-find...${NC}"
+        apt remove -y fzf ripgrep fd-find 2>/dev/null
+    fi
+
+    if [ "$INSTALLED_LSD" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing lsd...${NC}"
+        apt remove -y lsd 2>/dev/null
+    fi
+
+    if [ "$INSTALLED_BAT_CONF" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing bat config...${NC}"
+        rm -f "${USER_HOME}/.bat.conf"
+    fi
+
+    if [ "$INSTALLED_BAT" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing bat...${NC}"
+        apt remove -y bat 2>/dev/null
+    fi
+
+    if [ "$INSTALLED_P10K" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing Powerlevel10k...${NC}"
+        rm -rf "${ZSH_CUSTOM}/themes/powerlevel10k"
+    fi
+
+    if [ "$INSTALLED_PLUGINS" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing Zsh plugins...${NC}"
+        rm -rf \
+            "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" \
+            "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" \
+            "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" \
+            "${ZSH_CUSTOM}/plugins/zsh-autocomplete"
+    fi
+
+    if [ "$INSTALLED_OMZ" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Removing Oh My Zsh...${NC}"
+        rm -rf "${USER_HOME}/.oh-my-zsh"
+    fi
+
+    if [ "$INSTALLED_ZSH" -eq 1 ]; then
+        echo -e "${YELLOW}[CLEANUP] Restoring original shell...${NC}"
+        chsh -s /bin/bash "$SUDO_USER" 2>/dev/null
+        apt remove -y zsh 2>/dev/null
+    fi
+
+    echo -e "${YELLOW}[CLEANUP] Done. Your system is back to its original state.${NC}"
+}
+
+#  Error handler
 error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    local msg="$1"
+    echo -e "\n${RED}[ERROR] ${msg}${NC}"
+    echo -e "${RED}[ERROR] Installation aborted. Starting cleanup...${NC}"
+    cleanup
     exit 1
 }
 
-echo -e "${GREEN}[INFO] 🦝 Installing dependencies...${NC}"
-sudo apt update || error "Failed to update the package list."
-sudo apt install -y zsh git curl || error "Failed to install Zsh, Git, or Curl."
-
-echo -e "${GREEN}[INFO] 🦝 Changing default shell to Zsh...${NC}"
-chsh -s $(which zsh) "$USER" || error "Failed to change the default shell."
-
-echo -e "${GREEN}[INFO] 🦝 Installing Oh My Zsh🌈...${NC}"
-export RUNZSH=no
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Failed to install Oh My Zsh."
-
-echo -e "${GREEN}[INFO] 🦝 Installing Zsh plugins...${NC}"
-USER_HOME=$(eval echo ~$SUDO_USER)
-ZSH_CUSTOM="${USER_HOME}/.oh-my-zsh/custom"
-git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" || error "Failed to clone zsh-autosuggestions."
-git clone https://github.com/zsh-users/zsh-syntax-highlighting "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" || error "Failed to clone zsh-syntax-highlighting."
-git clone https://github.com/zdharma-continuum/fast-syntax-highlighting "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" || error "Failed to clone fast-syntax-highlighting."
-git clone https://github.com/marlonrichert/zsh-autocomplete "${ZSH_CUSTOM}/plugins/zsh-autocomplete" || error "Failed to clone zsh-autocomplete."
-
-echo -e "${GREEN}[INFO] 🦝 Installing Powerlevel10k theme...${NC}"
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" || error "Failed to clone Powerlevel10k."
-
+#  Helper: fetch latest GitHub release tag
 get_latest_release_version() {
     local repo="$1"
     curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | \
@@ -47,98 +123,134 @@ get_latest_release_version() {
         sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/'
 }
 
-# BAT installation
-echo -e "\n${GREEN}[INFO] 🦝 Installing BAT...${NC}"
+# Installation
+
+
+echo -e "${GREEN}"
+cat <<'BANNER'
+  _____       __ _    _____     _
+ / ____|     / _(_)  |_  / |   | |
+| (___  ___ | |_ _ ___ / /___| |__
+ \___ \/ _ \|  _| |___/ _/ __| '_ \
+ ____) | (_) | | | |  / /_\__ \ | | |
+|_____/ \___/|_| |_| /____|___/_| |_|
+BANNER
+echo -e "${NC}"
+
+echo -e "${GREEN}[INFO] Installing dependencies...${NC}"
+apt update || error "Failed to update the package list."
+apt install -y zsh git curl || error "Failed to install zsh, git, or curl."
+INSTALLED_ZSH=1
+
+echo -e "${GREEN}[INFO] Changing default shell to Zsh...${NC}"
+chsh -s "$(which zsh)" "$SUDO_USER" || error "Failed to change the default shell."
+
+echo -e "${GREEN}[INFO] Installing Oh My Zsh...${NC}"
+export RUNZSH=no
+su -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' "$SUDO_USER" \
+    || error "Failed to install Oh My Zsh."
+INSTALLED_OMZ=1
+
+echo -e "${GREEN}[INFO] Installing Zsh plugins...${NC}"
+git clone https://github.com/zsh-users/zsh-autosuggestions       "${ZSH_CUSTOM}/plugins/zsh-autosuggestions"         || error "Failed to clone zsh-autosuggestions."
+git clone https://github.com/zsh-users/zsh-syntax-highlighting   "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting"     || error "Failed to clone zsh-syntax-highlighting."
+git clone https://github.com/zdharma-continuum/fast-syntax-highlighting "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" || error "Failed to clone fast-syntax-highlighting."
+git clone https://github.com/marlonrichert/zsh-autocomplete       "${ZSH_CUSTOM}/plugins/zsh-autocomplete"            || error "Failed to clone zsh-autocomplete."
+INSTALLED_PLUGINS=1
+
+echo -e "${GREEN}[INFO] Installing Powerlevel10k theme...${NC}"
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" \
+    || error "Failed to clone Powerlevel10k."
+INSTALLED_P10K=1
+
+# BAT
+echo -e "\n${GREEN}[INFO] Installing bat...${NC}"
 DEFAULT_BAT_RELEASE="bat_0.25.0_amd64.deb"
 LATEST_BAT_VERSION="$(get_latest_release_version "sharkdp/bat")"
 BAT_RELEASE="${LATEST_BAT_VERSION:+bat_${LATEST_BAT_VERSION}_amd64.deb}"
 BAT_RELEASE="${BAT_RELEASE:-$DEFAULT_BAT_RELEASE}"
-
-VERSION=$(echo "$BAT_RELEASE" | sed -E 's/bat_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
-[ -z "$VERSION" ] && error "Invalid package filename. Check the releases at: https://github.com/sharkdp/bat/releases"
-
-BAT_URL="https://github.com/sharkdp/bat/releases/download/v$VERSION/$BAT_RELEASE"
-if [ -n "$LATEST_BAT_VERSION" ]; then
-    echo -e "${GREEN}[INFO] 🦝 Latest BAT release detected: ${LATEST_BAT_VERSION}${NC}"
-else
-    echo -e "${GREEN}[INFO] 🦝 Using default BAT release: ${DEFAULT_BAT_RELEASE}${NC}"
-fi
-curl -LO "$BAT_URL" || error "Failed to download BAT"
-sudo dpkg -i "$BAT_RELEASE" || sudo apt install -f -y || error "Failed to install BAT"
+BAT_VERSION=$(echo "$BAT_RELEASE" | sed -E 's/bat_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
+[ -z "$BAT_VERSION" ] && error "Could not determine bat version. Check: https://github.com/sharkdp/bat/releases"
+BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/${BAT_RELEASE}"
+[ -n "$LATEST_BAT_VERSION" ] \
+    && echo -e "${GREEN}[INFO] Latest bat release: ${LATEST_BAT_VERSION}${NC}" \
+    || echo -e "${GREEN}[INFO] Using default bat release: ${DEFAULT_BAT_RELEASE}${NC}"
+curl -LO "$BAT_URL"                                    || error "Failed to download bat."
+dpkg -i "$BAT_RELEASE" || apt install -f -y            || error "Failed to install bat."
 rm -f "$BAT_RELEASE"
+INSTALLED_BAT=1
 
-echo -e "${GREEN}[INFO] 🦝 Configuring BAT...${NC}"
-cat > "${USER_HOME}/.bat.conf" <<EOF
+echo -e "${GREEN}[INFO] Configuring bat...${NC}"
+cat > "${USER_HOME}/.bat.conf" <<'BATEOF'
 # BAT configuration
 --style="full"
-EOF
+BATEOF
+INSTALLED_BAT_CONF=1
 
-echo -e "${GREEN}[INFO] 🦝 Building BAT cache...${NC}"
-
-
-# LSD installation
-echo -e "\n${GREEN}[INFO] 🦝 Installing LSD...${NC}"
+# LSD
+echo -e "\n${GREEN}[INFO] Installing lsd...${NC}"
 DEFAULT_LSD_RELEASE="lsd_1.1.5_amd64.deb"
 LATEST_LSD_VERSION="$(get_latest_release_version "lsd-rs/lsd")"
 LSD_RELEASE="${LATEST_LSD_VERSION:+lsd_${LATEST_LSD_VERSION}_amd64.deb}"
 LSD_RELEASE="${LSD_RELEASE:-$DEFAULT_LSD_RELEASE}"
-
-VERSION_LSD=$(echo "$LSD_RELEASE" | sed -E 's/lsd_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
-[ -z "$VERSION_LSD" ] && error "Invalid package filename. Check: https://github.com/lsd-rs/lsd/releases"
-
-LSD_URL="https://github.com/lsd-rs/lsd/releases/download/v$VERSION_LSD/$LSD_RELEASE"
-if [ -n "$LATEST_LSD_VERSION" ]; then
-    echo -e "${GREEN}[INFO] 🦝 Latest LSD release detected: ${LATEST_LSD_VERSION}${NC}"
-else
-    echo -e "${GREEN}[INFO] 🦝 Using default LSD release: ${DEFAULT_LSD_RELEASE}${NC}"
-fi
-curl -LO "$LSD_URL" || error "Failed to download LSD"
-sudo dpkg -i "$LSD_RELEASE" || sudo apt install -f -y || error "Failed to install LSD"
+LSD_VERSION=$(echo "$LSD_RELEASE" | sed -E 's/lsd_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
+[ -z "$LSD_VERSION" ] && error "Could not determine lsd version. Check: https://github.com/lsd-rs/lsd/releases"
+LSD_URL="https://github.com/lsd-rs/lsd/releases/download/v${LSD_VERSION}/${LSD_RELEASE}"
+[ -n "$LATEST_LSD_VERSION" ] \
+    && echo -e "${GREEN}[INFO] Latest lsd release: ${LATEST_LSD_VERSION}${NC}" \
+    || echo -e "${GREEN}[INFO] Using default lsd release: ${DEFAULT_LSD_RELEASE}${NC}"
+curl -LO "$LSD_URL"                                    || error "Failed to download lsd."
+dpkg -i "$LSD_RELEASE" || apt install -f -y            || error "Failed to install lsd."
 rm -f "$LSD_RELEASE"
+INSTALLED_LSD=1
 
-echo -e "\n${GREEN}[INFO] 🦝 Installing productivity tools...${NC}"
-sudo apt install -y fzf ripgrep fd-find || error "Failed to install productivity tools."
+# Productivity tools
+echo -e "\n${GREEN}[INFO] Installing productivity tools (fzf, ripgrep, fd-find)...${NC}"
+apt install -y fzf ripgrep fd-find || error "Failed to install productivity tools."
+INSTALLED_PRODUCTIVITY=1
 
+# zoxide
 if ! command -v zoxide >/dev/null 2>&1; then
-    echo -e "${GREEN}[INFO] 🦝 Installing zoxide...${NC}"
-    curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash || error "Failed to install zoxide."
+    echo -e "${GREEN}[INFO] Installing zoxide...${NC}"
+    curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash \
+        || error "Failed to install zoxide."
+    INSTALLED_ZOXIDE=1
 fi
 
-echo -e "\n${GREEN}[INFO] 🦝 Installing Git UX tools...${NC}"
+# lazygit
+echo -e "\n${GREEN}[INFO] Installing Git UX tools...${NC}"
 if ! command -v lazygit >/dev/null 2>&1; then
     LAZYGIT_VERSION="$(get_latest_release_version "jesseduffield/lazygit")"
-    LAZYGIT_VERSION="${LAZYGIT_VERSION:-v0.45.0}"
+    LAZYGIT_VERSION="${LAZYGIT_VERSION:-0.45.0}"
     LAZYGIT_VERSION="${LAZYGIT_VERSION#v}"
     LAZYGIT_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-    curl -fsSL "$LAZYGIT_URL" -o /tmp/lazygit.tar.gz || error "Failed to download lazygit."
-    tar -xzf /tmp/lazygit.tar.gz -C /tmp || error "Failed to extract lazygit."
-    sudo install /tmp/lazygit /usr/local/bin/lazygit || error "Failed to install lazygit."
+    curl -fsSL "$LAZYGIT_URL" -o /tmp/lazygit.tar.gz   || error "Failed to download lazygit."
+    tar -xzf /tmp/lazygit.tar.gz -C /tmp               || error "Failed to extract lazygit."
+    install /tmp/lazygit /usr/local/bin/lazygit         || error "Failed to install lazygit."
     rm -f /tmp/lazygit /tmp/lazygit.tar.gz
+    INSTALLED_LAZYGIT=1
 fi
 
+# delta
 if ! command -v delta >/dev/null 2>&1; then
     DELTA_VERSION="$(get_latest_release_version "dandavison/delta")"
     DELTA_VERSION="${DELTA_VERSION:-0.18.2}"
     DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl.tar.gz"
-    curl -fsSL "$DELTA_URL" -o /tmp/delta.tar.gz || error "Failed to download delta."
-    tar -xzf /tmp/delta.tar.gz -C /tmp || error "Failed to extract delta."
-    sudo install /tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl/delta /usr/local/bin/delta || error "Failed to install delta."
+    curl -fsSL "$DELTA_URL" -o /tmp/delta.tar.gz        || error "Failed to download delta."
+    tar -xzf /tmp/delta.tar.gz -C /tmp                  || error "Failed to extract delta."
+    install /tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl/delta /usr/local/bin/delta \
+        || error "Failed to install delta."
     rm -rf /tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl /tmp/delta.tar.gz
+    INSTALLED_DELTA=1
 fi
 
-if ! command -v thefuck >/dev/null 2>&1; then
-    echo -e "${GREEN}[INFO] 🦝 Installing thefuck...${NC}"
-    sudo apt install -y python3-pip || error "Failed to install pip."
-    python3 -m pip install --user thefuck || error "Failed to install thefuck."
-fi
-
-# Configure aliases in .zshrc
-echo -e "\n${GREEN}[INFO] 🦝 Configuring .zshrc...${NC}"
-ZSHRC="${USER_HOME}/.zshrc"
-cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to backup .zshrc"
+#  Configure .zshrc
+echo -e "\n${GREEN}[INFO] Configuring .zshrc...${NC}"
+cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to backup .zshrc."
+ZSHRC_BACKED_UP=1
 
 if ! grep -Fq "# Sofi Zsh aliases" "${ZSHRC}"; then
-    cat >>"${ZSHRC}" <<'EOF'
+    cat >> "${ZSHRC}" <<'ZSHRCEOF'
 
 # Sofi Zsh aliases
 alias cat="bat"
@@ -154,10 +266,6 @@ if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init zsh)"
 fi
 
-if command -v thefuck >/dev/null 2>&1; then
-  eval "$(thefuck --alias)"
-fi
-
 if command -v fzf >/dev/null 2>&1; then
   source /usr/share/doc/fzf/examples/key-bindings.zsh 2>/dev/null
   source /usr/share/doc/fzf/examples/completion.zsh 2>/dev/null
@@ -169,10 +277,14 @@ if command -v delta >/dev/null 2>&1; then
   git config --global delta.navigate true
   git config --global delta.light false
 fi
-EOF
+ZSHRCEOF
+    ZSHRC_MODIFIED=1
 else
-    echo -e "${GREEN}[INFO] 🦝 Existing Sofi Zsh aliases found; keeping user config intact.${NC}"
+    echo -e "${GREEN}[INFO] Existing Sofi Zsh aliases found; keeping user config intact.${NC}"
 fi
 
-echo -e "\n${GREEN}[INFO] 🦝 Installation complete! Restart your terminal or run 'zsh'${NC}"
-echo -e "${GREEN}[INFO] 🦝 Enjoy your supercharged terminal! 💜${NC}"
+
+rm -f "${ZSHRC}.backup"
+
+echo -e "\n${GREEN}[INFO] Installation complete! Restart your terminal or run 'zsh'.${NC}"
+echo -e "${GREEN}[INFO] Enjoy your supercharged terminal!${NC}"
