@@ -352,12 +352,14 @@ if ! grep -q 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE' "${ZSHRC}"; then
     sed -i '/source \$ZSH\/oh-my-zsh.sh/a ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9e9e9e"' "${ZSHRC}"
 fi
 
-# ─── Completion menu select (navegar con flecha ↓) ───
+# ─── Completion menu select + arrow key navigation ───
+# Note: compinit must NOT be called manually after oh-my-zsh.sh loads.
+# OMZ handles it internally; a second call overwrites keybindings.
 if ! grep -q "zstyle ':completion:" "${ZSHRC}"; then
-    sed -i '/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE/a zstyle '"'"':completion:*'"'"' menu select' "${ZSHRC}"
+    sed -i '/source \$ZSH\/oh-my-zsh.sh/a zstyle '"'"':completion:*'"'"' menu select' "${ZSHRC}"
 fi
-if ! grep -q 'autoload -U compinit' "${ZSHRC}"; then
-    sed -i "/zstyle ':completion:\*'/a autoload -U compinit && compinit" "${ZSHRC}"
+if ! grep -q "bindkey '\^\[\[A'" "${ZSHRC}"; then
+    sed -i "/zstyle ':completion:\*'/a bindkey '^[[A' history-search-backward\\nbindkey '^[[B' history-search-forward\\nbindkey '^[[Z' reverse-menu-complete" "${ZSHRC}"
 fi
 
 if ! grep -Fq "# Sofi Zsh aliases" "${ZSHRC}"; then
