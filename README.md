@@ -1,46 +1,32 @@
 # Sofi Zsh Installer Script
 
-This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and popular plugins for Ubuntu systems, plus modern CLI tools and aliases.
+This script automates the installation and configuration of **Zsh**, **Oh My Zsh**, the **Powerlevel10k** theme, and a curated set of plugins for Debian/Ubuntu-based systems, plus modern CLI tools and shell aliases.
+
+The installer is fully **idempotent** — it can be run multiple times safely. Each step checks whether its target is already in place before acting.
 
 ---
 
 ## Prerequisites
 
-The installer is designed for Debian/Ubuntu-based systems and expects a non-interactive root session through `sudo`.
-
-```bash
-sudo apt-get update
-```
-
-Before running the script, make sure you have:
-
+- Debian/Ubuntu-based system (amd64)
 - `sudo` access enabled for your user
-- `curl` installed
-- a shell that supports bash
-- a valid terminal font for Powerlevel10k
+- `curl` installed (`sudo apt install curl`)
+- A terminal font compatible with Powerlevel10k
 
 > [!WARNING]
-> The script enforces `sudo` at the beginning by checking `$EUID`. If the user is not root, it exits with a clear message and tells you to run it as:
+> The script enforces `sudo` at startup by checking `$EUID`. If the user is not root, it re-runs itself with `sudo` automatically:
 >
 > ```bash
 > sudo ./sofi-zsh.sh
 > ```
 
-Install `curl` if it is missing:
-
-```bash
-sudo apt install curl
-```
-
 > [!IMPORTANT]
-> **Font Installation Guide**
+> **Font Installation**
 >
-> 1. Download the font:
->    - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
+> Powerlevel10k requires a Nerd Font. Download and install before running the script:
+> - [MesloLGS NF Regular.ttf](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf)
 >
-> 2. Install the font:
->    - Open the `.ttf` file and click **Install**
->    - Set it as the terminal font in your terminal profile settings
+> After installing the font, set it as the terminal font in your terminal profile settings.
 
 ---
 
@@ -58,30 +44,41 @@ This command downloads the installer, executes it with root privileges, and remo
 
 ## What the script does
 
-The installer performs a complete setup of a modern developer shell environment:
+The installer performs a complete, idempotent setup of a modern developer shell environment. Each step is guarded: if the component already exists, it is skipped.
 
-### Core Components
+### Core components
 - **Zsh** as the default shell
 - **Oh My Zsh** framework
 - **Powerlevel10k** theme
-- Essential plugins:
-  - `zsh-autosuggestions`
-  - `zsh-syntax-highlighting`
-  - `fast-syntax-highlighting`
-  - `zsh-autocomplete`
+- Optimized plugins — conflict-free, ~1s startup time:
+  - `git`, `sudo`, `command-not-found`, `colored-man-pages`
+  - `jsontools`, `extract`, `bgnotify`, `copypath`
+  - `gitignore`, `web-search`, `emoji`
+  - `zsh-autosuggestions` + `fast-syntax-highlighting` (loaded last)
+
+> [!NOTE]
+> `zsh-syntax-highlighting` and `zsh-autocomplete` are intentionally excluded. They conflict with `fast-syntax-highlighting` and `zsh-autosuggestions` respectively by redefining the same ZLE widgets.
 
 ### Developer tooling
-- **Bat**: `cat` alternative with syntax highlighting and line numbers
-- **LSD**: modern replacement for `ls` with colors and tree output
-- **fzf**: interactive fuzzy finder for files, command history and Git
-- **ripgrep (`rg`)**: fast and precise recursive search tool
+- **bat**: `cat` alternative with syntax highlighting and line numbers
+- **lsd**: modern replacement for `ls` with colors and tree output
+- **fzf**: interactive fuzzy finder for files, command history, and Git
+- **ripgrep (`rg`)**: fast recursive search tool
 - **fd**: modern replacement for `find`
 - **zoxide**: smart directory navigation based on usage history
 - **lazygit**: terminal UI for Git workflows
 - **delta**: improved Git diff viewer
 
-### Shell aliases and config
-The script appends a dedicated block at the end of `~/.zshrc` without overwriting the user’s existing configuration.
+### Shell configuration written to `~/.zshrc`
+
+The script modifies `.zshrc` in multiple surgical steps — it never blindly appends or overwrites:
+
+1. **PATH**: prepends `~/.local/bin` (needed for zoxide)
+2. **Theme**: sets or replaces `ZSH_THEME="powerlevel10k/powerlevel10k"`
+3. **Plugin block**: replaces any existing `plugins=(...)` with the curated list using `perl`
+4. **Autosuggestions color**: sets `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9e9e9e"` for visibility in Kitty/P10k
+5. **Completion menu**: adds `zstyle ':completion:*' menu select` + `autoload -U compinit && compinit` (enables navigating completions with `↓`)
+6. **Aliases block**: appended once, guarded by `# Sofi Zsh aliases` marker
 
 ```bash
 # Sofi Zsh aliases
@@ -111,54 +108,61 @@ if command -v delta >/dev/null 2>&1; then
 fi
 ```
 
-This approach preserves user customization while injecting the tools that make the terminal more powerful and productive.
+---
+
+## Idempotency
+
+Every install step checks before acting. Running the script multiple times is safe — it skips what is already in place and only installs what is missing.
+
+| Resource | Idempotency check | Action if present |
+|---|---|---|
+| zsh, git, curl | `dpkg -s` | skip |
+| Default shell | `getent passwd` == `which zsh` | skip |
+| Oh My Zsh | `[ -d ~/.oh-my-zsh ]` | skip |
+| zsh-autosuggestions | `[ -d .../plugin ]` | skip |
+| fast-syntax-highlighting | `[ -d .../plugin ]` | skip |
+| Powerlevel10k | `[ -d .../powerlevel10k ]` | skip |
+| bat | `command -v bat` | skip (prints installed version) |
+| bat config | `grep style="full" ~/.bat.conf` | skip |
+| lsd | `command -v lsd` | skip (prints installed version) |
+| fzf / ripgrep / fd-find | `dpkg -s` per package | installs only missing ones |
+| zoxide, lazygit, delta | `command -v` | skip |
+| PATH in .zshrc | `grep -q 'export PATH...'` | skip |
+| ZSH_THEME in .zshrc | replaces existing value | replaces with `powerlevel10k` |
+| plugins block in .zshrc | `perl` declarative replace | rewrites to desired state |
+| Completion config | `grep -q "zstyle ':completion:"` | skip |
+| Aliases block | `grep -Fq "# Sofi Zsh aliases"` | skip |
 
 ---
 
-## Version handling for BAT and LSD
+## Version handling for bat and lsd
 
-One of the key improvements in the current version is that the installer does not ask the user to manually enter package names during the setup flow.
-
-The script tries to detect the latest release directly from the GitHub Releases API:
+The script queries the GitHub Releases API to detect the latest version of `bat` and `lsd`:
 
 ```bash
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/releases/latest"
 ```
 
-If the query succeeds, it extracts the newest tag and builds the corresponding `.deb` filename automatically. If the API request fails or the tag format is unavailable, the script falls back to the known default package names already embedded in the script.
+If the query succeeds, it builds the correct `.deb` filename automatically. If the API is unavailable (rate limiting, no internet), it falls back to known stable defaults:
 
-### Default fallback values
-- BAT: `bat_0.25.0_amd64.deb`
-- LSD: `lsd_1.1.5_amd64.deb`
-
-This ensures the installer remains reliable in environments with restricted network access, rate limiting, or API failures while still preferring the latest stable version when available.
-
-### Why this approach is safer
-- avoids repeated manual input by the user
-- reduces installation mistakes from mistyped version strings
-- keeps the script resilient in CI-like environments and local setups
-- guarantees a valid package URL when automatic detection is unavailable
-
----
-
-## Automatic Configuration
-
-The script configures the following automatically:
-
-- `~/.zshrc` with Oh My Zsh and Powerlevel10k settings
-- plugin loading for the selected Zsh extensions
-- BAT configuration in `~/.bat.conf`
-- LSD-friendly alias behavior and directory formatting
-- zoxide initialization for smarter directory navigation
-- fzf key bindings and completion for interactive shell workflows
-- delta as the default git pager and diff viewer
-- lazygit installation for terminal-based Git UX
+- bat: `bat_0.25.0_amd64.deb`
+- lsd: `lsd_1.1.5_amd64.deb`
 
 ---
 
 ## Error handling and rollback
 
-The installer tracks every step with boolean state flags. If any step fails, the `error()` function:
+Before modifying `.zshrc`, the script prompts:
+
+```
+[WARN] This will modify ~/.zshrc and may overwrite your current configuration.
+[WARN] A backup will be saved as ~/.zshrc.backup
+Do you want to continue? [Y/n]:
+```
+
+Pressing Enter defaults to `Y`. Typing `n` aborts cleanly without any changes.
+
+The installer tracks every completed step with boolean state flags (`INSTALLED_ZSH`, `INSTALLED_OMZ`, etc.). If any step fails, the `error()` function:
 
 1. Prints the exact failure reason in red
 2. Calls `cleanup()` which undoes every completed step in reverse order:
@@ -173,41 +177,30 @@ This guarantees a clean system state after any partial failure, so the installer
 
 ---
 
-## Post-Installation
+## Post-installation
 
-After installation completes:
+After the script completes:
 
 1. Restart your terminal or run `zsh`
-2. Confirm that Powerlevel10k starts correctly
-3. If prompted, complete the interactive configuration wizard
-4. Use the aliases and enhanced CLI tools immediately
+2. Confirm that Powerlevel10k starts its configuration wizard
+3. Complete the interactive wizard (font, icons, prompt style)
+4. All aliases and CLI tools are immediately available
 
 ---
 
 ## Troubleshooting
 
 ### Script exits with a sudo message
-This is intentional. The script checks the current user identity and stops if it is not running with privileges:
-
-```bash
-if [ "$EUID" -ne 0 ]; then
-  echo "Por favor, ejecuta este script con sudo:"
-  echo "sudo $0"
-  exit 1
-fi
-```
-
-Run it with:
+This is intentional. Run it with:
 
 ```bash
 sudo ./sofi-zsh.sh
 ```
 
-### Package install fails
-If BAT or LSD cannot be downloaded or installed, verify:
-
+### bat or lsd cannot be downloaded
+Verify:
 - your internet connection is active
-- the package URL is valid for the selected release
+- the package URL is valid for the detected release
 - the fallback default version still matches the upstream asset naming convention
 
 ### zoxide not available after install
@@ -217,18 +210,17 @@ Open a new terminal session or run:
 source ~/.zshrc
 ```
 
-This reloads the configuration so the shell picks up the newly added initialization commands.
+### Completion menu (↓ navigation) not working
+The script injects `zstyle ':completion:*' menu select` and `autoload -U compinit && compinit` into `.zshrc`. If these are missing, run the script again — it will detect and insert them.
 
 ---
 
 ## What this installation gives you
 
-This installer aims to produce a ready-to-use developer shell with the following stack:
-
-- base: Zsh + Oh My Zsh + plugins
-- terminal aesthetics: Powerlevel10k
-- productivity: fzf + rg + fd + zoxide
-- git UX: lazygit + delta
+- **Base**: Zsh + Oh My Zsh + 13 conflict-free plugins
+- **Terminal aesthetics**: Powerlevel10k
+- **Productivity**: fzf + rg + fd + zoxide
+- **Git UX**: lazygit + delta
 
 This combination is a practical and modern terminal setup for software development, fast searching, Git management, and a cleaner daily workflow.
 

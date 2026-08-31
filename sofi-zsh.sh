@@ -86,9 +86,7 @@ cleanup() {
         echo -e "${YELLOW}[CLEANUP] Removing Zsh plugins...${NC}"
         rm -rf \
             "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" \
-            "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" \
-            "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" \
-            "${ZSH_CUSTOM}/plugins/zsh-autocomplete"
+            "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting"
     fi
 
     if [ "$INSTALLED_OMZ" -eq 1 ]; then
@@ -137,77 +135,132 @@ cat <<'BANNER'
 BANNER
 echo -e "${NC}"
 
-echo -e "${GREEN}[INFO] Installing dependencies...${NC}"
-apt update || error "Failed to update the package list."
-apt install -y zsh git curl || error "Failed to install zsh, git, or curl."
-INSTALLED_ZSH=1
+echo -e "${GREEN}[INFO] Checking dependencies...${NC}"
+if ! dpkg -s zsh >/dev/null 2>&1 || ! dpkg -s git >/dev/null 2>&1 || ! dpkg -s curl >/dev/null 2>&1; then
+    echo -e "${GREEN}[INFO] Installing dependencies...${NC}"
+    apt update || error "Failed to update the package list."
+    apt install -y zsh git curl || error "Failed to install zsh, git, or curl."
+    INSTALLED_ZSH=1
+else
+    echo -e "${GREEN}[INFO] Dependencies already installed, skipping.${NC}"
+fi
 
-echo -e "${GREEN}[INFO] Changing default shell to Zsh...${NC}"
-chsh -s "$(which zsh)" "$SUDO_USER" || error "Failed to change the default shell."
+echo -e "${GREEN}[INFO] Checking default shell...${NC}"
+CURRENT_SHELL="$(getent passwd "$SUDO_USER" | cut -d: -f7)"
+ZSH_BIN="$(which zsh)"
+if [ "$CURRENT_SHELL" = "$ZSH_BIN" ]; then
+    echo -e "${GREEN}[INFO] Default shell already Zsh, skipping.${NC}"
+else
+    echo -e "${GREEN}[INFO] Changing default shell to Zsh...${NC}"
+    chsh -s "$ZSH_BIN" "$SUDO_USER" || error "Failed to change the default shell."
+fi
 
-echo -e "${GREEN}[INFO] Installing Oh My Zsh...${NC}"
-export RUNZSH=no
-su -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' "$SUDO_USER" \
-    || error "Failed to install Oh My Zsh."
-INSTALLED_OMZ=1
+echo -e "${GREEN}[INFO] Checking Oh My Zsh...${NC}"
+if [ -d "${USER_HOME}/.oh-my-zsh" ]; then
+    echo -e "${GREEN}[INFO] Oh My Zsh already installed, skipping.${NC}"
+else
+    echo -e "${GREEN}[INFO] Installing Oh My Zsh...${NC}"
+    export RUNZSH=no
+    su -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' "$SUDO_USER" \
+        || error "Failed to install Oh My Zsh."
+    INSTALLED_OMZ=1
+fi
 
-echo -e "${GREEN}[INFO] Installing Zsh plugins...${NC}"
-git clone https://github.com/zsh-users/zsh-autosuggestions       "${ZSH_CUSTOM}/plugins/zsh-autosuggestions"         || error "Failed to clone zsh-autosuggestions."
-git clone https://github.com/zsh-users/zsh-syntax-highlighting   "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting"     || error "Failed to clone zsh-syntax-highlighting."
-git clone https://github.com/zdharma-continuum/fast-syntax-highlighting "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" || error "Failed to clone fast-syntax-highlighting."
-git clone https://github.com/marlonrichert/zsh-autocomplete       "${ZSH_CUSTOM}/plugins/zsh-autocomplete"            || error "Failed to clone zsh-autocomplete."
-INSTALLED_PLUGINS=1
+echo -e "${GREEN}[INFO] Checking Zsh plugins...${NC}"
+# NOTA: solo se instala fast-syntax-highlighting. zsh-syntax-highlighting es incompatible
+# con fast-syntax-highlighting, y zsh-autocomplete es incompatible con zsh-autosuggestions.
+if [ -d "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" ]; then
+    echo -e "${GREEN}[INFO] zsh-autosuggestions already installed, skipping.${NC}"
+else
+    git clone https://github.com/zsh-users/zsh-autosuggestions       "${ZSH_CUSTOM}/plugins/zsh-autosuggestions"         || error "Failed to clone zsh-autosuggestions."
+    INSTALLED_PLUGINS=1
+fi
+if [ -d "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" ]; then
+    echo -e "${GREEN}[INFO] fast-syntax-highlighting already installed, skipping.${NC}"
+else
+    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting "${ZSH_CUSTOM}/plugins/fast-syntax-highlighting" || error "Failed to clone fast-syntax-highlighting."
+    INSTALLED_PLUGINS=1
+fi
 
-echo -e "${GREEN}[INFO] Installing Powerlevel10k theme...${NC}"
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" \
-    || error "Failed to clone Powerlevel10k."
-INSTALLED_P10K=1
+echo -e "${GREEN}[INFO] Checking Powerlevel10k theme...${NC}"
+if [ -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]; then
+    echo -e "${GREEN}[INFO] Powerlevel10k already installed, skipping.${NC}"
+else
+    echo -e "${GREEN}[INFO] Installing Powerlevel10k theme...${NC}"
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" \
+        || error "Failed to clone Powerlevel10k."
+    INSTALLED_P10K=1
+fi
 
-# BAT
-echo -e "\n${GREEN}[INFO] Installing bat...${NC}"
-DEFAULT_BAT_RELEASE="bat_0.25.0_amd64.deb"
-LATEST_BAT_VERSION="$(get_latest_release_version "sharkdp/bat")"
-BAT_RELEASE="${LATEST_BAT_VERSION:+bat_${LATEST_BAT_VERSION}_amd64.deb}"
-BAT_RELEASE="${BAT_RELEASE:-$DEFAULT_BAT_RELEASE}"
-BAT_VERSION=$(echo "$BAT_RELEASE" | sed -E 's/bat_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
-[ -z "$BAT_VERSION" ] && error "Could not determine bat version. Check: https://github.com/sharkdp/bat/releases"
-BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/${BAT_RELEASE}"
-[ -n "$LATEST_BAT_VERSION" ] \
-    && echo -e "${GREEN}[INFO] Latest bat release: ${LATEST_BAT_VERSION}${NC}" \
-    || echo -e "${GREEN}[INFO] Using default bat release: ${DEFAULT_BAT_RELEASE}${NC}"
-curl -LO "$BAT_URL"                                    || error "Failed to download bat."
-dpkg -i "$BAT_RELEASE" || apt install -f -y            || error "Failed to install bat."
-rm -f "$BAT_RELEASE"
-INSTALLED_BAT=1
+# BAT — idempotente: solo instala si no existe
+if command -v bat >/dev/null 2>&1; then
+    echo -e "\n${GREEN}[INFO] bat already installed ($(bat --version 2>/dev/null)), skipping.${NC}"
+else
+    echo -e "\n${GREEN}[INFO] Installing bat...${NC}"
+    DEFAULT_BAT_RELEASE="bat_0.25.0_amd64.deb"
+    LATEST_BAT_VERSION="$(get_latest_release_version "sharkdp/bat")"
+    BAT_RELEASE="${LATEST_BAT_VERSION:+bat_${LATEST_BAT_VERSION}_amd64.deb}"
+    BAT_RELEASE="${BAT_RELEASE:-$DEFAULT_BAT_RELEASE}"
+    BAT_VERSION=$(echo "$BAT_RELEASE" | sed -E 's/bat_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
+    [ -z "$BAT_VERSION" ] && error "Could not determine bat version. Check: https://github.com/sharkdp/bat/releases"
+    BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/${BAT_RELEASE}"
+    [ -n "$LATEST_BAT_VERSION" ] \
+        && echo -e "${GREEN}[INFO] Latest bat release: ${LATEST_BAT_VERSION}${NC}" \
+        || echo -e "${GREEN}[INFO] Using default bat release: ${DEFAULT_BAT_RELEASE}${NC}"
+    curl -LO "$BAT_URL"                                    || error "Failed to download bat."
+    dpkg -i "$BAT_RELEASE" || apt install -f -y            || error "Failed to install bat."
+    rm -f "$BAT_RELEASE"
+    INSTALLED_BAT=1
+fi
 
-echo -e "${GREEN}[INFO] Configuring bat...${NC}"
-cat > "${USER_HOME}/.bat.conf" <<'BATEOF'
+echo -e "${GREEN}[INFO] Checking bat config...${NC}"
+if [ -f "${USER_HOME}/.bat.conf" ] && grep -q 'style="full"' "${USER_HOME}/.bat.conf" 2>/dev/null; then
+    echo -e "${GREEN}[INFO] bat config already exists, skipping.${NC}"
+else
+    echo -e "${GREEN}[INFO] Configuring bat...${NC}"
+    cat > "${USER_HOME}/.bat.conf" <<'BATEOF'
 # BAT configuration
 --style="full"
 BATEOF
-INSTALLED_BAT_CONF=1
+    INSTALLED_BAT_CONF=1
+fi
 
-# LSD
-echo -e "\n${GREEN}[INFO] Installing lsd...${NC}"
-DEFAULT_LSD_RELEASE="lsd_1.1.5_amd64.deb"
-LATEST_LSD_VERSION="$(get_latest_release_version "lsd-rs/lsd")"
-LSD_RELEASE="${LATEST_LSD_VERSION:+lsd_${LATEST_LSD_VERSION}_amd64.deb}"
-LSD_RELEASE="${LSD_RELEASE:-$DEFAULT_LSD_RELEASE}"
-LSD_VERSION=$(echo "$LSD_RELEASE" | sed -E 's/lsd_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
-[ -z "$LSD_VERSION" ] && error "Could not determine lsd version. Check: https://github.com/lsd-rs/lsd/releases"
-LSD_URL="https://github.com/lsd-rs/lsd/releases/download/v${LSD_VERSION}/${LSD_RELEASE}"
-[ -n "$LATEST_LSD_VERSION" ] \
-    && echo -e "${GREEN}[INFO] Latest lsd release: ${LATEST_LSD_VERSION}${NC}" \
-    || echo -e "${GREEN}[INFO] Using default lsd release: ${DEFAULT_LSD_RELEASE}${NC}"
-curl -LO "$LSD_URL"                                    || error "Failed to download lsd."
-dpkg -i "$LSD_RELEASE" || apt install -f -y            || error "Failed to install lsd."
-rm -f "$LSD_RELEASE"
-INSTALLED_LSD=1
+# LSD — idempotente: solo instala si no existe
+if command -v lsd >/dev/null 2>&1; then
+    echo -e "\n${GREEN}[INFO] lsd already installed ($(lsd --version 2>/dev/null)), skipping.${NC}"
+else
+    echo -e "\n${GREEN}[INFO] Installing lsd...${NC}"
+    DEFAULT_LSD_RELEASE="lsd_1.1.5_amd64.deb"
+    LATEST_LSD_VERSION="$(get_latest_release_version "lsd-rs/lsd")"
+    LSD_RELEASE="${LATEST_LSD_VERSION:+lsd_${LATEST_LSD_VERSION}_amd64.deb}"
+    LSD_RELEASE="${LSD_RELEASE:-$DEFAULT_LSD_RELEASE}"
+    LSD_VERSION=$(echo "$LSD_RELEASE" | sed -E 's/lsd_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb/\1/')
+    [ -z "$LSD_VERSION" ] && error "Could not determine lsd version. Check: https://github.com/lsd-rs/lsd/releases"
+    LSD_URL="https://github.com/lsd-rs/lsd/releases/download/v${LSD_VERSION}/${LSD_RELEASE}"
+    [ -n "$LATEST_LSD_VERSION" ] \
+        && echo -e "${GREEN}[INFO] Latest lsd release: ${LATEST_LSD_VERSION}${NC}" \
+        || echo -e "${GREEN}[INFO] Using default lsd release: ${DEFAULT_LSD_RELEASE}${NC}"
+    curl -LO "$LSD_URL"                                    || error "Failed to download lsd."
+    dpkg -i "$LSD_RELEASE" || apt install -f -y            || error "Failed to install lsd."
+    rm -f "$LSD_RELEASE"
+    INSTALLED_LSD=1
+fi
 
-# Productivity tools
-echo -e "\n${GREEN}[INFO] Installing productivity tools (fzf, ripgrep, fd-find)...${NC}"
-apt install -y fzf ripgrep fd-find || error "Failed to install productivity tools."
-INSTALLED_PRODUCTIVITY=1
+# Productivity tools — idempotente: instala solo los faltantes
+MISSING_PROD=""
+for _pkg in fzf ripgrep fd-find; do
+    if ! dpkg -s "$_pkg" >/dev/null 2>&1; then
+        MISSING_PROD="$_pkg $MISSING_PROD"
+    fi
+done
+if [ -z "$MISSING_PROD" ]; then
+    echo -e "\n${GREEN}[INFO] Productivity tools (fzf, ripgrep, fd-find) already installed, skipping.${NC}"
+else
+    echo -e "\n${GREEN}[INFO] Installing productivity tools ($MISSING_PROD)...${NC}"
+    # shellcheck disable=SC2086
+    apt install -y $MISSING_PROD || error "Failed to install productivity tools."
+    INSTALLED_PRODUCTIVITY=1
+fi
 
 # zoxide
 if ! command -v zoxide >/dev/null 2>&1; then
@@ -244,10 +297,68 @@ if ! command -v delta >/dev/null 2>&1; then
     INSTALLED_DELTA=1
 fi
 
-#  Configure .zshrc
+#  Configure .zshrc — validación antes de sobrescribir
+echo -e "\n${YELLOW}[WARN] This will modify ${ZSHRC} and may overwrite your current configuration.${NC}"
+echo -e "${YELLOW}[WARN] A backup will be saved as ${ZSHRC}.backup${NC}"
+printf "${YELLOW}Do you want to continue? [Y/n]: ${NC}"
+read -r _confirm
+_confirm=${_confirm:-Y}
+if [[ ! "$_confirm" =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}[INFO] Aborted by user. No changes were made.${NC}"
+    exit 0
+fi
+
 echo -e "\n${GREEN}[INFO] Configuring .zshrc...${NC}"
 cp "${ZSHRC}" "${ZSHRC}.backup" || error "Failed to backup .zshrc."
 ZSHRC_BACKED_UP=1
+
+# ─── Asegura PATH temprano para plugins que viven en ~/.local/bin (zoxide) ───
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "${ZSHRC}"; then
+    # Inserta al inicio para que esté disponible antes de cargar plugins
+    sed -i '1i export PATH="$HOME/.local/bin:$PATH"' "${ZSHRC}"
+fi
+
+# ─── Tema ───
+if grep -q '^ZSH_THEME=' "${ZSHRC}"; then
+    sed -i 's|^ZSH_THEME=.*|ZSH_THEME="powerlevel10k/powerlevel10k"|' "${ZSHRC}"
+else
+    echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> "${ZSHRC}"
+fi
+
+# ─── Plugins: reemplaza cualquier bloque plugins=(...) existente ───
+# Plugins finales optimizados (13) - sin conflictos: solo fast-syntax-highlighting (no zsh-syntax-highlighting)
+# y solo zsh-autosuggestions (no zsh-autocomplete). Orden: autosuggestions y fast al final.
+DESIRED_PLUGINS='plugins=(
+  git
+  sudo
+  command-not-found
+  colored-man-pages
+  jsontools
+  extract
+  bgnotify
+  copypath
+  gitignore
+  web-search
+  emoji
+  zsh-autosuggestions
+  fast-syntax-highlighting
+)'
+# Usa perl para reemplazo multilínea robusto
+perl -i -0777 -pe "s/plugins=\([^)]*\)/$DESIRED_PLUGINS/s" "${ZSHRC}" || error "Failed to configure plugins in .zshrc."
+
+# ─── Autosuggestions visible en Kitty/P10k ───
+if ! grep -q 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE' "${ZSHRC}"; then
+    # Inserta después de source $ZSH/oh-my-zsh.sh
+    sed -i '/source \$ZSH\/oh-my-zsh.sh/a ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9e9e9e"' "${ZSHRC}"
+fi
+
+# ─── Completion menu select (navegar con flecha ↓) ───
+if ! grep -q "zstyle ':completion:" "${ZSHRC}"; then
+    sed -i '/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE/a zstyle '"'"':completion:*'"'"' menu select' "${ZSHRC}"
+fi
+if ! grep -q 'autoload -U compinit' "${ZSHRC}"; then
+    sed -i "/zstyle ':completion:\*'/a autoload -U compinit && compinit" "${ZSHRC}"
+fi
 
 if ! grep -Fq "# Sofi Zsh aliases" "${ZSHRC}"; then
     cat >> "${ZSHRC}" <<'ZSHRCEOF'
