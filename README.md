@@ -65,7 +65,6 @@ The installer performs a complete, idempotent setup of a modern developer shell 
 - **fzf**: interactive fuzzy finder for files, command history, and Git
 - **ripgrep (`rg`)**: fast recursive search tool
 - **fd**: modern replacement for `find`
-- **zoxide**: smart directory navigation based on usage history
 - **lazygit**: terminal UI for Git workflows
 - **delta**: improved Git diff viewer
 
@@ -73,40 +72,37 @@ The installer performs a complete, idempotent setup of a modern developer shell 
 
 The script modifies `.zshrc` in multiple surgical steps — it never blindly appends or overwrites:
 
-1. **PATH**: prepends `~/.local/bin` (needed for zoxide)
+1. **PATH**: prepends `~/.local/bin` (user binaries)
 2. **Theme**: sets or replaces `ZSH_THEME="powerlevel10k/powerlevel10k"`
-3. **Plugin block**: replaces any existing `plugins=(...)` with the curated list using `perl`
-4. **Autosuggestions color**: sets `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9e9e9e"` for visibility in Kitty/P10k
-5. **Completion menu**: adds `zstyle ':completion:*' menu select` + `autoload -U compinit && compinit` (enables navigating completions with `↓`)
-6. **Aliases block**: appended once, guarded by `# Sofi Zsh aliases` marker
+3. **Plugin block**: replaces any existing `plugins=(...)` with the curated list using a line-anchored `perl` replace, so the commented example line in the stock Oh My Zsh template is never touched
+4. **Autosuggestions color**: inserts `ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9e9e9e"` before `source $ZSH/oh-my-zsh.sh`
+5. **Completion menu**: inserts `zstyle ':completion:*' menu select` after `source $ZSH/oh-my-zsh.sh`, followed by `bindkey` bindings for `↑`/`↓` history search and `Shift+Tab` reverse menu (Oh My Zsh runs `compinit` itself)
+6. **Powerlevel10k**: appends `[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh`
+7. **Aliases block**: appended once, guarded by `# Sofi Zsh aliases` marker
+
+Before finishing, the script runs `zsh -n ~/.zshrc` plus assertions on the theme line, the plugin list, and the number of `plugins=(...)` blocks.
 
 ```bash
 # Sofi Zsh aliases
 alias cat="bat"
 alias ls="lsd --group-dirs=first"
-alias l="ls -l --group-dirs=first"
-alias la="ls -a --group-dirs=first"
-alias lla="ls -la --group-dirs=first"
-alias lt="ls --tree --group-dirs=first"
+alias l="ls -l"
+alias la="ls -a"
+alias lla="ls -la"
+alias lt="ls --tree"
 alias commit="git add . && git commit"
 alias fd="fdfind"
 
-if command -v zoxide >/dev/null 2>&1; then
-  eval "$(zoxide init zsh)"
-fi
-
 if command -v fzf >/dev/null 2>&1; then
-  source /usr/share/doc/fzf/examples/key-bindings.zsh 2>/dev/null
-  source /usr/share/doc/fzf/examples/completion.zsh 2>/dev/null
-fi
-
-if command -v delta >/dev/null 2>&1; then
-  git config --global core.pager delta
-  git config --global interactive.diffFilter "delta --color-only"
-  git config --global delta.navigate true
-  git config --global delta.light false
+  for _fzf_dir in /usr/share/doc/fzf/examples /usr/share/fzf; do
+    [[ -f "$_fzf_dir/key-bindings.zsh" ]] && source "$_fzf_dir/key-bindings.zsh"
+    [[ -f "$_fzf_dir/completion.zsh" ]] && source "$_fzf_dir/completion.zsh"
+  done
+  unset _fzf_dir
 fi
 ```
+
+`delta` is configured as the git pager at install time (`git config --global`), so the shell does not run `git config` on every start.
 
 ---
 
@@ -117,21 +113,39 @@ Every install step checks before acting. Running the script multiple times is sa
 | Resource | Idempotency check | Action if present |
 |---|---|---|
 | zsh, git, curl | `dpkg -s` | skip |
-| Default shell | `getent passwd` == `which zsh` | skip |
+| Default shell | `readlink -f` of `getent passwd` vs `command -v zsh` | skip |
 | Oh My Zsh | `[ -d ~/.oh-my-zsh ]` | skip |
 | zsh-autosuggestions | `[ -d .../plugin ]` | skip |
 | fast-syntax-highlighting | `[ -d .../plugin ]` | skip |
 | Powerlevel10k | `[ -d .../powerlevel10k ]` | skip |
+| `~/.oh-my-zsh/custom` ownership | always | `chown -R` to the invoking user |
 | bat | `command -v bat` | skip (prints installed version) |
-| bat config | `grep style="full" ~/.bat.conf` | skip |
+| bat config | `grep style ~/.config/bat/config` | skip |
 | lsd | `command -v lsd` | skip (prints installed version) |
 | fzf / ripgrep / fd-find | `dpkg -s` per package | installs only missing ones |
-| zoxide, lazygit, delta | `command -v` | skip |
+| lazygit, delta | `command -v` | skip |
+| delta as git pager | runs once at install | rewrites `git config --global` |
 | PATH in .zshrc | `grep -q 'export PATH...'` | skip |
 | ZSH_THEME in .zshrc | replaces existing value | replaces with `powerlevel10k` |
-| plugins block in .zshrc | `perl` declarative replace | rewrites to desired state |
+| plugins block in .zshrc | `perl` line-anchored replace | rewrites to desired state |
+| Leftover example block | `grep '^# Example format: plugins=($'` | removes the region |
+| `source $ZSH/oh-my-zsh.sh` | `grep` before inserting | aborts if missing |
+| Autosuggestions color | `grep -q ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE` | skip |
 | Completion config | `grep -q "zstyle ':completion:"` | skip |
+| Arrow-key bindings | `grep -q "bindkey '^[[A'"` | skip |
+| `~/.p10k.zsh` source line | `grep -q p10k.zsh` | skip |
 | Aliases block | `grep -Fq "# Sofi Zsh aliases"` | skip |
+
+### Post-write verification
+
+These run at the end of every installation:
+
+- `zsh -n ~/.zshrc` — the file must parse
+- `ZSH_THEME` is `powerlevel10k/powerlevel10k`
+- `zsh-autosuggestions` and `fast-syntax-highlighting` are present in the plugin list
+- exactly one `plugins=(...)` block exists
+
+Any failure triggers the rollback below.
 
 ---
 
@@ -143,10 +157,12 @@ The script queries the GitHub Releases API to detect the latest version of `bat`
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/releases/latest"
 ```
 
-If the query succeeds, it builds the correct `.deb` filename automatically. If the API is unavailable (rate limiting, no internet), it falls back to known stable defaults:
+The leading `v` is stripped from the tag, and the `.deb` download tries both the `v1.2.3` and `1.2.3` asset paths, since upstream projects differ in tag format. If the API is unavailable (rate limiting, no internet), it falls back to known stable defaults:
 
 - bat: `bat_0.25.0_amd64.deb`
 - lsd: `lsd_1.1.5_amd64.deb`
+
+Downloads are written to `/tmp` and removed after installation.
 
 ---
 
@@ -160,18 +176,20 @@ Before modifying `.zshrc`, the script prompts:
 Do you want to continue? [Y/n]:
 ```
 
-Pressing Enter defaults to `Y`. Typing `n` aborts cleanly without any changes.
+Pressing Enter defaults to `Y`. Typing `n` skips the `.zshrc` step and exits. On a non-interactive stdin (no TTY) the prompt is skipped and the step proceeds.
 
 The installer tracks every completed step with boolean state flags (`INSTALLED_ZSH`, `INSTALLED_OMZ`, etc.). If any step fails, the `error()` function:
 
 1. Prints the exact failure reason in red
 2. Calls `cleanup()` which undoes every completed step in reverse order:
    - restores `.zshrc` from backup if it was modified
-   - removes installed binaries (`delta`, `lazygit`, `zoxide`)
+   - removes installed binaries (`delta`, `lazygit`)
    - uninstalls apt packages (`fzf`, `ripgrep`, `fd-find`, `lsd`, `bat`)
    - removes Oh My Zsh, plugins, and the Powerlevel10k theme
    - reverts the default shell back to `/bin/bash`
 3. Exits with a non-zero code
+
+On success the backup at `~/.zshrc.backup` is kept.
 
 This guarantees a clean system state after any partial failure, so the installer can be run again from scratch without manual cleanup.
 
@@ -182,8 +200,8 @@ This guarantees a clean system state after any partial failure, so the installer
 After the script completes:
 
 1. Restart your terminal or run `zsh`
-2. Confirm that Powerlevel10k starts its configuration wizard
-3. Complete the interactive wizard (font, icons, prompt style)
+2. Powerlevel10k runs `p10k configure` on first start — complete the interactive wizard (font, icons, prompt style)
+3. The chosen configuration is saved to `~/.p10k.zsh` and loaded from `~/.zshrc`
 4. All aliases and CLI tools are immediately available
 
 ---
@@ -203,15 +221,8 @@ Verify:
 - the package URL is valid for the detected release
 - the fallback default version still matches the upstream asset naming convention
 
-### zoxide not available after install
-Open a new terminal session or run:
-
-```bash
-source ~/.zshrc
-```
-
 ### Completion menu (↓ navigation) not working
-The script injects `zstyle ':completion:*' menu select` and `autoload -U compinit && compinit` into `.zshrc`. If these are missing, run the script again — it will detect and insert them.
+The script inserts `zstyle ':completion:*' menu select` and the `bindkey` history-search bindings into `.zshrc`. If these are missing, run the script again — it will detect and insert them.
 
 ---
 
@@ -219,7 +230,7 @@ The script injects `zstyle ':completion:*' menu select` and `autoload -U compini
 
 - **Base**: Zsh + Oh My Zsh + 13 conflict-free plugins
 - **Terminal aesthetics**: Powerlevel10k
-- **Productivity**: fzf + rg + fd + zoxide
+- **Productivity**: fzf + rg + fd
 - **Git UX**: lazygit + delta
 
 This combination is a practical and modern terminal setup for software development, fast searching, Git management, and a cleaner daily workflow.
